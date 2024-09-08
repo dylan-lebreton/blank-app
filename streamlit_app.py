@@ -3,12 +3,13 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-# Initialisation de la liste des logements
-logements = []
+# Initialisation des logements dans la session Streamlit
+if 'logements' not in st.session_state:
+    st.session_state['logements'] = []
 
 # Ajout d'un logement
 def ajouter_logement(nom, frais_fixes, frais_variables):
-    logements.append({
+    st.session_state['logements'].append({
         'Nom': nom,
         'Frais fixes mensuels (€)': frais_fixes,
         'Frais variables mensuels (€)': frais_variables
@@ -18,7 +19,7 @@ def ajouter_logement(nom, frais_fixes, frais_variables):
 st.title("Comparaison des coûts cumulés des logements")
 st.header("Ajouter un logement")
 
-nom = st.text_input("Nom du logement", value=f"Logement {len(logements) + 1}")
+nom = st.text_input("Nom du logement", value=f"Logement {len(st.session_state['logements']) + 1}")
 frais_fixes = st.number_input("Frais fixes mensuels (€)", min_value=0.0, value=0.0, step=0.01)
 frais_variables = st.number_input("Frais variables mensuels (€)", min_value=0.0, value=1000.0, step=0.01)
 
@@ -26,7 +27,7 @@ if st.button("Ajouter le logement"):
     ajouter_logement(nom, frais_fixes, frais_variables)
 
 # Conversion des données en DataFrame
-df_logements = pd.DataFrame(logements)
+df_logements = pd.DataFrame(st.session_state['logements'])
 
 if not df_logements.empty:
     st.write("Logements ajoutés :")
