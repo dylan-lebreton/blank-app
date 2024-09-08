@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-# Initialize the list of monthly cost profiles in session state
+# Initialize the list of cost profiles in session state
 if 'cost_profiles' not in st.session_state:
     st.session_state['cost_profiles'] = []
 
@@ -11,8 +11,8 @@ if 'cost_profiles' not in st.session_state:
 def add_cost_profile(label, fixed_cost, monthly_cost):
     st.session_state['cost_profiles'].append({
         'Label': label,
-        'Fixed Cost (€)': fixed_cost,  # Fixed cost = starting point (ordinate at the origin)
-        'Monthly Cost (€)': monthly_cost  # Monthly cost = cost added every month
+        'Fixed Cost (€)': fixed_cost,  # Fixed cost = Ordinate at the origin
+        'Monthly Cost (€)': monthly_cost  # Monthly cost = Added every 1st of the month
     })
 
 # User interface to add a new cost profile
@@ -44,23 +44,22 @@ if not df_cost_profiles.empty:
     df_cumulative = pd.DataFrame(index=time_index)
 
     for i, profile in df_cost_profiles.iterrows():
-        # Fixed cost is applied at t=0 (start of the period)
+        # Fixed cost applied at the start
         fixed_cost_value = profile['Fixed Cost (€)']
-        
-        # Create a time series with the fixed cost applied at t=0
+
+        # Initialize the cumulative cost with fixed cost
         cumulative_cost = pd.Series(fixed_cost_value, index=time_index)
 
-        # Apply the monthly cost at the start of each month (1st day of each month)
-        monthly_cost_series = pd.Series(profile['Monthly Cost (€)'], 
-                                        index=pd.date_range(start=start_date, end=end_date, freq='MS'))
+        # Apply the monthly cost at the start of each month
+        monthly_cost = profile['Monthly Cost (€)']
+        for date in pd.date_range(start=start_date, end=end_date, freq='MS'):
+            if date == start_date and date.day == 1:
+                # If the graph starts on the 1st of the month, apply fixed + monthly cost at t=0
+                cumulative_cost[date:] += fixed_cost_value + monthly_cost
+            else:
+                cumulative_cost[date:] += monthly_cost
 
-        # Reindex to match the daily time index, filling forward
-        monthly_cost_daily = monthly_cost_series.reindex(time_index, method='ffill').fillna(0)
-
-        # Apply the monthly cost increase every 1st of the month, accumulating the cost each month
-        cumulative_cost += monthly_cost_daily.cumsum()
-
-        # Add the cost profile's cumulative cost to the DataFrame
+        # Add the profile's cumulative cost to the DataFrame
         df_cumulative[profile['Label']] = cumulative_cost
 
     # Plot the cumulative costs using Plotly
