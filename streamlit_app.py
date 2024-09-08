@@ -16,7 +16,7 @@ def add_function(label, intercept, slope):
     })
 
 # User interface to add a new function
-st.title("Comparison of Cumulative Costs (Linear Functions)")
+st.title("Comparison of Linear Functions")
 st.header("Add a new function")
 
 label = st.text_input("Function label", value=f"Function {len(st.session_state['functions']) + 1}")
@@ -40,25 +40,32 @@ if not df_functions.empty:
     # Generate a time index with a daily step
     time_index = pd.date_range(start=start_date, end=end_date, freq='D')
 
-    # Create a DataFrame to store the cumulative costs for each function
-    df_cumulative_costs = pd.DataFrame(index=time_index)
+    # Create a DataFrame to store the cumulative values for each function
+    df_cumulative = pd.DataFrame(index=time_index)
 
     for i, function in df_functions.iterrows():
         # Intercept is applied at t=0 (start of the period)
         intercept = function['Intercept (€)']
         
-        # Slope is applied monthly, but the slope per day is slope / 30.44 (average days per month)
-        daily_slope = function['Slope (€ per month)'] / 30.44
+        # Create a time series with the intercept applied at t=0
+        cumulative_cost = pd.Series(intercept, index=time_index)
+
+        # Apply the slope (monthly increment) at the start of each month
+        monthly_slope = pd.Series(function['Slope (€ per month)'], 
+                                  index=pd.date_range(start=start_date, end=end_date, freq='MS'))
         
-        # Create a linear function over time: intercept + slope * time
-        cumulative_cost = intercept + np.arange(len(time_index)) * daily_slope
+        # Reindex to match the daily time index, forward filling the slope
+        monthly_slope_daily = monthly_slope.reindex(time_index, method='ffill').fillna(0)
+
+        # Calculate the cumulative sum of the monthly increments
+        cumulative_cost += monthly_slope_daily.cumsum()
 
         # Add the function's cumulative cost to the DataFrame
-        df_cumulative_costs[function['Label']] = cumulative_cost
+        df_cumulative[function['Label']] = cumulative_cost
 
     # Plot the cumulative costs using Plotly
-    fig = px.line(df_cumulative_costs, x=df_cumulative_costs.index, y=df_cumulative_costs.columns, 
-                  title="Comparison of Cumulative Costs (Linear Functions)")
+    fig = px.line(df_cumulative, x=df_cumulative.index, y=df_cumulative.columns, 
+                  title="Comparison of Linear Functions")
     st.plotly_chart(fig)
 
 else:
