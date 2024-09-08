@@ -58,4 +58,8 @@ if not df_functions.empty:
 
     # Plot the cumulative costs using Plotly
     fig = px.line(df_cumulative_costs, x=df_cumulative_costs.index, y=df_cumulative_costs.columns, 
-                  title="Comparison of Cumulative Costs (Line
+                  title="Comparison of Cumulative Costs (Linear Functions)")
+    st.plotly_chart(fig)
+
+else:
+    st.write("No functions have been added yet.")
