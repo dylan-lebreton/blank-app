@@ -11,8 +11,8 @@ if 'logements' not in st.session_state:
 def ajouter_logement(nom, frais_fixes, frais_variables):
     st.session_state['logements'].append({
         'Nom': nom,
-        'Frais fixes mensuels (€)': frais_fixes,
-        'Frais variables mensuels (€)': frais_variables
+        'Frais d\'agence (€)': frais_fixes,  # Frais fixes = Frais d'agence (ordonnée à l'origine)
+        'Loyer mensuel (€)': frais_variables  # Frais variables = Loyer mensuel
     })
 
 # Interface utilisateur pour ajouter des logements
@@ -20,8 +20,8 @@ st.title("Comparaison des coûts cumulés des logements")
 st.header("Ajouter un logement")
 
 nom = st.text_input("Nom du logement", value=f"Logement {len(st.session_state['logements']) + 1}")
-frais_fixes = st.number_input("Frais fixes mensuels (€)", min_value=0.0, value=0.0, step=0.01)
-frais_variables = st.number_input("Frais variables mensuels (€)", min_value=0.0, value=1000.0, step=0.01)
+frais_fixes = st.number_input("Frais d'agence (€)", min_value=0.0, value=0.0, step=0.01)
+frais_variables = st.number_input("Loyer mensuel (€)", min_value=0.0, value=1000.0, step=0.01)
 
 if st.button("Ajouter le logement"):
     ajouter_logement(nom, frais_fixes, frais_variables)
@@ -44,16 +44,15 @@ if not df_logements.empty:
     df_cout_cumule = pd.DataFrame(index=index_temps)
 
     for i, logement in df_logements.iterrows():
-        # Création d'une série de frais mensuels appliqués chaque mois
-        frais_fixes_series = pd.Series(logement['Frais fixes mensuels (€)'], 
-                                       index=pd.date_range(start=date_debut, end=date_fin, freq='MS')).reindex(index_temps, method='ffill').fillna(0)
+        # Frais d'agence ajoutés une seule fois (ordonnée à l'origine)
+        frais_agence = logement['Frais d\'agence (€)']
         
-        # Création d'une série de frais variables journaliers
-        frais_variables_series = pd.Series(logement['Frais variables mensuels (€)'], 
-                                           index=pd.date_range(start=date_debut, end=date_fin, freq='MS')).reindex(index_temps, method='ffill').fillna(0)
+        # Frais variables ajoutés mensuellement (loyer mensuel appliqué chaque mois)
+        frais_mensuels_series = pd.Series(logement['Loyer mensuel (€)'], 
+                                          index=pd.date_range(start=date_debut, end=date_fin, freq='MS')).reindex(index_temps, method='ffill').fillna(0)
         
-        # Coût cumulé = Somme des frais fixes mensuels et des frais variables mensuels
-        cout_cumule = frais_fixes_series.cumsum() + frais_variables_series.cumsum()
+        # Calcul du coût cumulé : frais d'agence (une fois) + loyer mensuel cumulé
+        cout_cumule = frais_agence + frais_mensuels_series.cumsum()
         
         df_cout_cumule[logement['Nom']] = cout_cumule
 
