@@ -2,7 +2,7 @@
 
 A **Streamlit** app to compare cumulative costs based on fixed and monthly fees. Add multiple cost profiles and visualize how costs evolve over time.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://monthly-cost-comparison.streamlit.app/)
 
 ### How to run it on your own machine
 
