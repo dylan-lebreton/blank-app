@@ -44,16 +44,17 @@ if not df_logements.empty:
     df_cout_cumule = pd.DataFrame(index=index_temps)
 
     for i, logement in df_logements.iterrows():
-        # Frais d'agence ajoutés une seule fois (ordonnée à l'origine)
+        # Frais d'agence ajoutés une seule fois à t=0 (ordonnée à l'origine)
         frais_agence = logement['Frais d\'agence (€)']
         
-        # Frais variables ajoutés mensuellement (loyer mensuel appliqué chaque mois)
+        # Frais variables mensuels (loyer) appliqués chaque mois
         frais_mensuels_series = pd.Series(logement['Loyer mensuel (€)'], 
                                           index=pd.date_range(start=date_debut, end=date_fin, freq='MS')).reindex(index_temps, method='ffill').fillna(0)
-        
-        # Calcul du coût cumulé : frais d'agence (une fois) + loyer mensuel cumulé
+
+        # Calcul du coût cumulé : frais d'agence (une fois) + loyer cumulé à chaque mois
         cout_cumule = frais_agence + frais_mensuels_series.cumsum()
-        
+
+        # Ajouter la courbe du logement dans le DataFrame
         df_cout_cumule[logement['Nom']] = cout_cumule
 
     # Tracé interactif avec Plotly
