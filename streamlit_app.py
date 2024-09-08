@@ -11,7 +11,7 @@ if 'functions' not in st.session_state:
 def add_function(label, intercept, slope):
     st.session_state['functions'].append({
         'Label': label,
-        'Intercept (€)': intercept,  # Intercept = Ordinate at the origin
+        'Intercept (€)': intercept,  # Intercept = Initial value
         'Slope (€ per month)': slope  # Slope = Monthly increment
     })
 
@@ -45,20 +45,21 @@ if not df_functions.empty:
 
     for i, function in df_functions.iterrows():
         # Intercept is applied at t=0 (start of the period)
-        intercept = function['Intercept (€)']
+        intercept_value = function['Intercept (€)']
         
         # Create a time series with the intercept applied at t=0
-        cumulative_cost = pd.Series(intercept, index=time_index)
+        cumulative_cost = pd.Series(intercept_value, index=time_index)
 
-        # Apply the slope (monthly increment) at the start of each month
+        # Apply the slope (monthly increment) continuously each month
         monthly_slope = pd.Series(function['Slope (€ per month)'], 
                                   index=pd.date_range(start=start_date, end=end_date, freq='MS'))
-        
-        # Reindex to match the daily time index, forward filling the slope
+
+        # Reindex to match the daily time index, filling forward
         monthly_slope_daily = monthly_slope.reindex(time_index, method='ffill').fillna(0)
 
-        # Calculate the cumulative sum of the monthly increments
-        cumulative_cost += monthly_slope_daily.cumsum()
+        # Apply the monthly increment continuously for each day, and keep the intercept at the start
+        daily_increment = monthly_slope_daily / monthly_slope_daily.groupby(monthly_slope_daily.index.to_period('M')).transform('count')
+        cumulative_cost += daily_increment.cumsum()
 
         # Add the function's cumulative cost to the DataFrame
         df_cumulative[function['Label']] = cumulative_cost
